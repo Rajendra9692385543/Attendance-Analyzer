@@ -17,7 +17,7 @@ def analyze():
     if file.filename == '':
         return 'No file selected'
 
-    # Save file
+    # Save uploaded file
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     file.save(filepath)
@@ -26,7 +26,7 @@ def analyze():
     df = pd.read_excel(filepath)
     df.columns = df.columns.str.strip()
 
-    # Find roll number column (case-insensitive match)
+    # Find roll number column (case-insensitive)
     roll_col = None
     for col in df.columns:
         if "roll" in col.lower():
@@ -35,9 +35,9 @@ def analyze():
     if not roll_col:
         return "No Roll Number column found."
 
-    # Define known metadata columns (case-insensitive match)
-    meta_cols = ['admno', 'rollno', 'student', 'division']
-    subject_cols = [col for col in df.columns if col.lower() not in meta_cols and col != roll_col]
+    # Define metadata columns (lowercased for matching)
+    meta_keywords = ['admno', 'rollno', 'roll no', 'roll', 'student', 'name', 'division']
+    subject_cols = [col for col in df.columns if not any(k in col.lower() for k in meta_keywords)]
 
     student_data = []
     min_roll, max_roll = float('inf'), float('-inf')
@@ -59,7 +59,7 @@ def analyze():
                 subjects.append({
                     'name': subject,
                     'attendance': attendance,
-                    'low_attendance': attendance < 75  # 🔴 Mark if less than 75%
+                    'low_attendance': attendance < 75  # Flag low attendance
                 })
 
         student_data.append({
